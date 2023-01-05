@@ -18,5 +18,6 @@
   - `python -m venv .venv` で作成
   - `poetry init` でプロジェクトを初期化
   - `poetry add opencv-python` とかでパッケージをインストール
+    - dev用なら`-D`をつければヨシ
 - 実行
   -  `poetry run python <python script>` でpoetryがvenvの中で実行してくれる
