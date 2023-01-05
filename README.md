@@ -1,6 +1,6 @@
 # retro-image-generator
 
-[これ](https://dailyportalz.jp/kiji/retro_PC_game-mitaina-shashin)を実装してみたい
+[これ](https://dailyportalz.jp/kiji/retro_PC_game-mitaina-shashin)をPythonで実装してみたい
 
 ## 環境構築
 
