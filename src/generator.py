@@ -12,14 +12,17 @@ def main():
     input_img_path = Path(f"image/input/{img_name}.jpg")
     output_img_path = Path(f"image/output/{img_name}.png")
     
+    # 画像読み込み
     input_img = cv2.imread(str(input_img_path))
+
+    # もろもろの処理
     resized_img = resize_img(input_img, resize_ratio)
-
-    corrected_img = saturation_up(gamma_correction(tonecurve(resized_img)), saturation_ratio)
+    corrected_img = saturation_up(gamma_curve(tone_curve(resized_img)), saturation_ratio)
     dithered_64color_img = process_dithering_64color(corrected_img)
+    binarized_img = binarize_img(dithered_64color_img)
 
-    # cv2.imwrite(str(output_img_path.with_name(f"{img_name}_dithered_64.png").as_posix()), dithered_64color_img)
-    cv2.imwrite(str(output_img_path), binarize_img(dithered_64color_img))
+    # 画像書き込み
+    cv2.imwrite(str(output_img_path), binarized_img)
 
 
 def process_dithering_8color(img):
@@ -33,18 +36,17 @@ def process_dithering_8color(img):
         [15, 7, 13, 5]
     ]) * (2**4)
     
-    # 画像サイズの取得, 処理後の画像を宣言
-    hight, width, ch = img.shape
+    # 画像サイズの取得
+    hight, width, _ = img.shape
 
     # 画像サイズのdither_matrixを取得(切り上げ演算)
     tiled_dither_matrix_grayscale = np.tile(dither_matrix, (-(-hight // 4), -(-width // 4)))[:hight, :width]
-    # 3ch化
     tiled_dither_matrix = np.stack(
         [tiled_dither_matrix_grayscale, tiled_dither_matrix_grayscale, tiled_dither_matrix_grayscale],
         axis=2
     )
 
-    return np.where((img < tiled_dither_matrix), 0, 255)
+    return np.where((img < tiled_dither_matrix), 0, 255).astype(np.uint8)
 
 
 
@@ -59,12 +61,11 @@ def process_dithering_64color(img):
         [15, 7, 13, 5]
     ]) * (2**4)
     
-    # 画像サイズの取得, 処理後の画像を宣言
-    hight, width, ch = img.shape
+    # 画像サイズの取得
+    hight, width, _ = img.shape
 
     # 画像サイズのdither_matrixを取得(切り上げ演算)
     tiled_dither_matrix_grayscale = np.tile(dither_matrix, (-(-hight // 4), -(-width // 4)))[:hight, :width]
-    # 3ch化
     tiled_dither_matrix = np.stack(
         [tiled_dither_matrix_grayscale, tiled_dither_matrix_grayscale, tiled_dither_matrix_grayscale],
         axis=2
@@ -75,24 +76,31 @@ def process_dithering_64color(img):
 
     # うまいこと4値化する
     processed_img = np.where((0 <= diff_img_matrix) & (diff_img_matrix < 255/4), 0, diff_img_matrix)
-    processed_img = np.where((255/4 <= diff_img_matrix) & (diff_img_matrix < 255/2), 255/3, processed_img)
-    processed_img = np.where((255/2 <= diff_img_matrix) & (diff_img_matrix < 255/4*3), 255/3*2, processed_img)
+    processed_img = np.where((255/4 <= diff_img_matrix) & (diff_img_matrix < 255/2), 255//3, processed_img)
+    processed_img = np.where((255/2 <= diff_img_matrix) & (diff_img_matrix < 255/4*3), 255//3*2, processed_img)
     processed_img = np.where((255/4*3 <= diff_img_matrix), 255, processed_img)
     
-    return processed_img
+    return processed_img.astype(np.uint8)
 
 
-# TODO: 実装
 def process_dithering_256color(img):
-    """ディザリングで R:G:B=3bit:3bit:2bit の64色へ減色
+    """ディザリングで R:G:B=3bit:3bit:2bit の256色へ減色
     """
-    return 0
+    # TODO: 実装
+    return 
 
 
 def binarize_img(img):
-    """2値化
+    """変わるかわからんが大津の手法を利用して2値化
+        NOTE: OpenCVの大津の手法はグレースケールしか対応してない
     """
-    _, processed_img = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY)
+    # _, processed_img = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY)
+    processed_img = np.zeros(img.shape)
+    b, g, r = cv2.split(img)
+    
+    _, processed_img[:, :, 0] = cv2.threshold(b, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    _, processed_img[:, :, 1] = cv2.threshold(g, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    _, processed_img[:, :, 2] = cv2.threshold(r, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     return processed_img
 
 
@@ -103,7 +111,7 @@ def resize_img(img, ratio):
     return processed_img
 
 
-def gamma_correction(img, gamma=2.2):
+def gamma_curve(img, gamma=2.2):
     """暗いところを持ち上げるように補正
     """
     nomalized_img = img.astype(np.float32) / 255
@@ -111,9 +119,9 @@ def gamma_correction(img, gamma=2.2):
     return (gammaed_img * 255).astype(np.uint8)
 
 
-def tonecurve(img):
+def tone_curve(img):
     """HSV色空間に変換して、明度(v)に対してヒストグラム平坦化
-        NOTE: 本当は逆S字トーンカーブをかけたかったけど、ちょうどいい関数がなかった
+        NOTE: 本当は逆S字トーンカーブをやりたかったけど、ちょうどいい関数を簡単に実装できなかった
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
@@ -124,6 +132,7 @@ def saturation_up(img, ratio=1.5):
     """HSV色空間に変換して、彩度(s)をあげる
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
     img_hsv[:, :, 1] = img_hsv[:, :, 1] * ratio
     return cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
 
