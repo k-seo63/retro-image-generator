@@ -17,9 +17,9 @@
 - 仮想環境(venv)
   - `python -m venv .venv` で作成
   - `poetry init` でプロジェクトを初期化
+    - 既にpyproject.tomlがあるなら、`poetry install`でdependenciesをインストール
   - `poetry add opencv-python` とかでパッケージをインストール
-    - dev用なら`-D`をつければヨシ
-  - pyproject.tomlがあるなら、`poetry install`でdependenciesをインストール
+    - dev.dependenciesなら`-D`をつければヨシ
 - 実行
   -  `poetry run python <python script>` でpoetryがvenvの中で実行してくれる
 
