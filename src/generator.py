@@ -99,13 +99,11 @@ def gamma_correction(img, gamma=2.2):
     return (gammaed_img * 255).astype(np.uint8)
 
 
-def saturation_up(img, ratio=1):
+def saturation_up(img, ratio=2.5):
     """彩度あげる
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_hsv[:, :, 1] = img_hsv[:, :, 1] * ratio
-
-    print(img_hsv.max())
     return cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
 
 
