@@ -26,7 +26,8 @@ def main():
 
 
 def process_dithering_8color(img):
-    """ディザリングで R:G:B=1bit:1bit:1bit の8色へ減色
+    """
+    ディザリングで R:G:B=1bit:1bit:1bit の8色へ減色
     """
     # 4x4配列ディザリングで参照するmatrix
     dither_matrix = np.array([
@@ -51,7 +52,8 @@ def process_dithering_8color(img):
 
 
 def process_dithering_64color(img):
-    """ディザリングで R:G:B=2bit:2bit:2bit の64色へ減色
+    """
+    ディザリングで R:G:B=2bit:2bit:2bit の64色へ減色
     """
     # 4x4配列ディザリングで参照するmatrix
     dither_matrix = np.array([
@@ -84,15 +86,17 @@ def process_dithering_64color(img):
 
 
 def process_dithering_256color(img):
-    """ディザリングで R:G:B=3bit:3bit:2bit の256色へ減色
+    """
+    ディザリングで R:G:B=3bit:3bit:2bit の256色へ減色
     """
     # TODO: 実装
     return 
 
 
 def binarize_img(img):
-    """変わるかわからんが大津の手法を利用して2値化
-        NOTE: OpenCVの大津の手法はグレースケールしか対応してない
+    """
+    変わるかわからんが大津の手法を利用して2値化
+    NOTE: OpenCVの大津の手法はグレースケールしか対応してない
     """
     # _, processed_img = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY)
     processed_img = np.zeros(img.shape)
@@ -105,14 +109,16 @@ def binarize_img(img):
 
 
 def resize_img(img, ratio):
-    """リサイズ
     """
-    processed_img = cv2.resize(img, None, fx=ratio, fy=ratio)
+    リサイズ
+    """
+    processed_img = cv2.resize(img, dsize=None, fx=ratio, fy=ratio)
     return processed_img
 
 
 def gamma_curve(img, gamma=2.2):
-    """暗いところを持ち上げるように補正
+    """
+    暗いところを持ち上げるように補正
     """
     nomalized_img = img.astype(np.float32) / 255
     gammaed_img = nomalized_img ** (1/gamma)
@@ -120,8 +126,9 @@ def gamma_curve(img, gamma=2.2):
 
 
 def tone_curve(img):
-    """HSV色空間に変換して、明度(v)に対してヒストグラム平坦化
-        NOTE: 本当は逆S字トーンカーブをやりたかったけど、ちょうどいい関数を簡単に実装できなかった
+    """
+    HSV色空間に変換して、明度(v)に対してヒストグラム平坦化
+    NOTE: 本当は逆S字トーンカーブをやりたかったけど、ちょうどいい関数を簡単に実装できなかった
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
@@ -129,10 +136,10 @@ def tone_curve(img):
 
 
 def saturation_up(img, ratio=1.5):
-    """HSV色空間に変換して、彩度(s)をあげる
+    """
+    HSV色空間に変換して、彩度(s)をあげる
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
     img_hsv[:, :, 1] = img_hsv[:, :, 1] * ratio
     return cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
 
