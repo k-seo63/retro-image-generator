@@ -2,18 +2,23 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+# parameta
+img_name = "lena"
+resize_ratio = 1
+saturation_ratio = 1.5
+
 
 def main():
-    input_img_path = Path("image/input/009.jpg")
-    output_img_path = Path("image/output/009_binalized.png")
+    input_img_path = Path(f"image/input/{img_name}.jpg")
+    output_img_path = Path(f"image/output/{img_name}.png")
     
     input_img = cv2.imread(str(input_img_path))
+    resized_img = resize_img(input_img, resize_ratio)
 
-    gamma_img = saturation_up(gamma_correction(input_img))
+    corrected_img = saturation_up(gamma_correction(tonecurve(resized_img)), saturation_ratio)
+    dithered_64color_img = process_dithering_64color(corrected_img)
 
-    dithered_64color_img = process_dithering_64color(gamma_img)
-    cv2.imwrite(str(output_img_path.with_name("009_dithered_64.png").as_posix()), dithered_64color_img)
-
+    # cv2.imwrite(str(output_img_path.with_name(f"{img_name}_dithered_64.png").as_posix()), dithered_64color_img)
     cv2.imwrite(str(output_img_path), binarize_img(dithered_64color_img))
 
 
@@ -91,16 +96,32 @@ def binarize_img(img):
     return processed_img
 
 
+def resize_img(img, ratio):
+    """リサイズ
+    """
+    processed_img = cv2.resize(img, None, fx=ratio, fy=ratio)
+    return processed_img
+
+
 def gamma_correction(img, gamma=2.2):
-    """暗いところを持ち上げる補正をかける
+    """暗いところを持ち上げるように補正
     """
     nomalized_img = img.astype(np.float32) / 255
     gammaed_img = nomalized_img ** (1/gamma)
     return (gammaed_img * 255).astype(np.uint8)
 
 
-def saturation_up(img, ratio=2.5):
-    """彩度あげる
+def tonecurve(img):
+    """HSV色空間に変換して、明度(v)に対してヒストグラム平坦化
+        NOTE: 本当は逆S字トーンカーブをかけたかったけど、ちょうどいい関数がなかった
+    """
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
+    return cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
+
+
+def saturation_up(img, ratio=1.5):
+    """HSV色空間に変換して、彩度(s)をあげる
     """
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img_hsv[:, :, 1] = img_hsv[:, :, 1] * ratio

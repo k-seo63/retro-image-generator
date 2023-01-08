@@ -19,5 +19,7 @@
   - `poetry init` でプロジェクトを初期化
   - `poetry add opencv-python` とかでパッケージをインストール
     - dev用なら`-D`をつければヨシ
+  - pyproject.tomlがあるなら、`poetry install`でdependenciesをインストール
 - 実行
   -  `poetry run python <python script>` でpoetryがvenvの中で実行してくれる
+
