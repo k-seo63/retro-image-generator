@@ -23,3 +23,15 @@
 - 実行
   -  `poetry run python <python script>` でpoetryがvenvの中で実行してくれる
 
+
+## 実行方法
+
+1. image/input配下に画像ファイルを配置。
+2. generator.pyのparametaを入力。
+    - img_name: 拡張子を含まないファイル名(jpg)
+    - resize_ratio: 800x800以下くらいになるような倍率をいれるといいかも
+    - saturation_ratio: 彩度を上げるときの倍率、上げ過ぎると白飛びしたりするかも
+3. 下記コマンドで実行。
+  ```
+  poetry run python src/generator.py
+  ```
