@@ -4,20 +4,20 @@ import numpy as np
 
 # parameta
 img_name = "009"
-resize_ratio = 1
-saturation_ratio = 1.5
+resize_ratio = 0.5
+saturation_ratio = 2
 
 
 def main():
     input_img_path = Path(f"image/input/{img_name}.jpg")
-    output_img_path = Path(f"image/output/{img_name}.png")
+    output_img_path = Path(f"image/output/{img_name}_r{resize_ratio}_s{saturation_ratio}.png")
     
     # 画像読み込み
     input_img = cv2.imread(str(input_img_path))
 
     # もろもろの処理
     resized_img = resize_img(input_img, resize_ratio)
-    corrected_img = saturation_up(gamma_curve(resized_img), saturation_ratio)
+    corrected_img = saturation_up(tone_curve(resized_img), saturation_ratio)
     dithered_img = process_dithering(corrected_img)
     binarized_img = binarize_img(dithered_img)
 
@@ -52,7 +52,6 @@ def process_dithering_8color(img):
     )
 
     return np.where((img < tiled_dither_matrix), 0, 255).astype(np.uint8)
-
 
 
 def process_dithering_64color(img):
@@ -101,7 +100,7 @@ def process_dithering_256color(img):
     return 
 
 
-def process_dithering(img, level=8):
+def process_dithering(img, level=6):
     """
     ディザリングで R:G:B=level:level:level[bit] の level^3[色] へ減色
     """
@@ -169,18 +168,19 @@ def gamma_curve(img, gamma=2.2):
     暗いところを持ち上げるように補正
     """
     nomalized_img = img.astype(np.float32) / 255
-    gammaed_img = nomalized_img ** (1/gamma)
-    return (gammaed_img * 255).astype(np.uint8)
+    gammaed_img = np.maximum(nomalized_img, 1e-8) ** (1/gamma)
+    return (np.minimum(np.maximum(gammaed_img, 0), 1) * 255).astype(np.uint8)
 
 
 def tone_curve(img):
     """
-    HSV色空間に変換して、明度(v)に対してヒストグラム平坦化
-    NOTE: 本当は逆S字トーンカーブをやりたかったけど、ちょうどいい関数を簡単に実装できなかった
+    逆S字トーンカーブ
+    ここにある式を適当にチューニングして実装
+    http://www.indsys.chuo-u.ac.jp/~kato/IPS/IPS-071115a.pdf
     """
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    img_hsv[:, :, 2] = cv2.equalizeHist(img_hsv[:, :, 2])
-    return cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
+    nomalized_img = img.astype(np.float32) / 255
+    toned_img = (1/10) * np.log(np.maximum(nomalized_img, 1e-8) / np.maximum((1-nomalized_img), 1e-8)) + 0.5
+    return (np.minimum(np.maximum(toned_img, 0), 1) * 255).astype(np.uint8)
 
 
 def saturation_up(img, ratio=1.5):
